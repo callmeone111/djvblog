@@ -1,0 +1,392 @@
+{% autoescape off %}
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Dashboard - Posts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        .active {
+            background-color: #f5f5f5;
+        }
+
+        .menubar {
+            background-color: #F9F9F9;
+            border-right: 1px solid #DEDEDE;
+        }
+
+        .previews {
+            border-right: 1px solid #DEDEDE;
+            padding: 40px 20px;
+            justify-content: flex-start !important;
+        }
+
+        .editor {
+            padding: 40px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="application">
+        <nav class="navbar is-hidden-desktop has-background-light" role="navigation" aria-label="main navigation">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <span>[[ title ]]</span>
+                    </a>
+                    <a role="button" class="navbar-burger burger" v-bind:class="{'is-active': showmenu}"
+                        aria-label="menu" aria-expanded="false" data-target="menu" v-on:click="showmenu=!showmenu">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+
+                <div id="menu" class="navbar-menu" v-bind:class="{'is-active': showmenu}">
+                    <div class="navbar-end">
+                        <a class="navbar-item" v-for="(link, menuitem) in menus" v-bind:href="link">[[ menuitem ]]</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="columns mx-0">
+            <div class="column is-2 hero is-fullheight is-hidden-mobile menubar">
+                <div class="editor">
+                    <a class="button is-block is-danger is-blod" v-on:click="create">
+                        New Post
+                    </a>
+                    <div class="hero-body container px-1">
+                        <aside class="menu">
+                            <p class="menu-label">
+                                Dashboard
+                            </p>
+                            <ul class="menu-list">
+                                <li v-for="(link, menuitem) in menus">
+                                    <a v-bind:href="link">[[ menuitem ]]</a>
+                                </li>
+                            </ul>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-4 hero is-fullheight previews">
+
+                <article class="message is-danger is-hidden-desktop">
+                    <div class="message-body">
+                        <p>Management and editing functions are not available on the mobile device.</p>
+                        <p>Please use the desktop for management.</p>
+                    </div>
+                </article>
+
+                <div class="card" v-for="(post, postid) in posts" v-on:click="select(postid)"
+                    v-bind:class="{'active': editor.current.id===postid}">
+                    <div class="card-content">
+                        <div style="padding: 10px 0;">
+                            <strong>[[ post.title ]]</strong>
+                            <a class="is-size-7 has-text-grey-light is-pulled-right" v-bind:href="'/post/' + postid"
+                                target="_blank">
+                                <i class="fa fa-link" aria-hidden="true"></i> Preview
+                            </a>
+                        </div>
+                        <div>
+                            <p v-html="post.excerpt"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-6 hero is-fullheight editor">
+                <div class="card" v-show="editor.working">
+                    <div class="card-content">
+                        <div class="field">
+                            <div class="control is-medium">
+                                <input class="input is-medium" type="text" placeholder="Header"
+                                    v-model="editor.current.title">
+                            </div>
+                        </div>
+                        <div class="columns mb-0">
+                            <div class="column is-6">
+                                <div class="tags has-addons" v-if="!editor.editing.image"
+                                    v-on:click="editor.editing.image=true">
+                                    <span class="tag">Featured Image</span>
+                                    <span class="tag is-primary">Link</span>
+                                </div>
+                                <div class="field has-addons" v-if="editor.editing.image">
+                                    <div class="control is-expanded is-small">
+                                        <input class="input is-small" type="text" placeholder="Post Image Address"
+                                            v-model="editor.current.image">
+                                    </div>
+                                    <div class="control is-small">
+                                        <button class="button is-info is-small"
+                                            v-on:click="editor.editing.image=false">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-6">
+                                <div class="tags is-pulled-right" v-if="!editor.editing.tags">
+                                    <span class="tag is-info" v-for="tag in editor.current.tags"
+                                        v-on:click="editor.editing.tags=true">[[ tag ]]</span>
+                                </div>
+                                <div class="field has-addons" v-if="editor.editing.tags">
+                                    <div class="control is-expanded is-small has-icons-right">
+                                        <input class="input is-small" type="text" placeholder="Tags with separator ','"
+                                            v-model="editor.temp.tagstr">
+                                    </div>
+                                    <div class="control is-small">
+                                        <button class="button is-info is-small"
+                                            v-on:click="editor._save_tags(editor.temp.tagstr)">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="content" id="editor"></div>
+                    </div>
+                    <div class="card-footer">
+                        <a class="card-footer-item has-background-danger-light" v-on:click="remove">Delete</a>
+                        <a class="card-footer-item has-background-success-light" v-on:click="save">Save</a>
+                    </div>
+                </div>
+                <div class="hero-body">
+                    <div class="container has-text-centered" v-if="!editor.working">
+                        <h1 class="title has-text-grey-light">Select or Create Post</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% csrf_token %}
+</body>
+
+<script>
+    function heredoc(fn) {
+        return fn.toString().split('\n').slice(1, -1).join('\n') + '\n'
+    }
+    function substr(string, length = 20) {
+        if (string !== null && string !== undefined) {
+            if (string.length <= length)
+                return string;
+            return string.substr(0, length) + '...';
+        }
+        return '...';
+    }
+    function splstrp(string, separator = ',') {
+        result = [];
+        if (string !== null && string !== undefined) {
+            let splited = string.split(separator);
+            for (var ele of splited)
+                result.push(ele);
+        }
+        return result;
+    }
+
+    app = {};
+    init = (app) => {
+        app.data = {
+            showmenu: false,
+            title: "{{ title }}",
+            menus: {
+                "Posts": "/dashboard/posts",
+                // "Image": "/dashboard/images",
+                "Settings": "/dashboard/settings"
+            },
+            posts: JSON.parse('{{ posts }}'),
+
+            editor: {
+                working: false, // 是否正在工作
+                current: {},  // 当前正在编辑的文章
+                quill: null,  // 编辑器实例
+                temp: {}, // 临时变量
+                editing: {
+                    content: false, // 是否正在编辑内容
+                    title: false,  // 是否正在编辑标题
+                    image: false,  // 是否正在编辑文章头图
+                    tags: false    // 是否正在编辑标签
+                },
+
+                saved: function () {
+                    if (!app.data.editor.editing.content &&
+                        !app.data.editor.editing.title &&
+                        !app.data.editor.editing.image &&
+                        !app.data.editor.editing.tags)
+                        return true;
+                    return false;
+                },  // 判断是否可以保存
+
+                init: function (post = null) {
+                    app.data.editor.editing.content = false;
+                    app.data.editor.editing.title = false;
+                    app.data.editor.editing.image = false;
+                    app.data.editor.editing.tags = false;
+                    app.data.editor.working = true;
+
+                    // 当没有提供文章对象时新建一个临时的
+                    if (post === null) {
+                        var maxid = 1;
+                        if (Object.getOwnPropertyNames(app.data.posts).length > 1)
+                            var maxid = Math.max.apply(null, Object.keys(app.data.posts)) + 1;
+                        app.data.editor.current = {
+                            id: maxid,
+                            tags: ["Input", "your", "tags", "here"],
+                            title: "Title",
+                            excerpt: "<p>Post Excerpt</p>",
+                            image: "",
+                            content: heredoc(function () {/*
+                                    <p>Post Excerpt</p>
+                                    <p>---</p>
+                                    <p><strong>Post Content<strong></p>
+                            */})
+                        }
+                    } else {
+                        app.data.editor.current = post;
+                        post.content = unescape(post.content);
+                    }
+
+                    // 绑定文本变化事件
+                    app.data.editor.quill.on('text-change', function (delta, source) {
+                        if (app.data.editor.working)
+                            app.data.editor.editing.content = true;
+                    });
+
+                    // 绑定临时变量
+                    app.data.editor.temp.tagstr = app.data.editor.current.tags.toString();
+
+                    app.data.editor.quill.pasteHTML(app.data.editor.current.content);
+                    return app.data.editor.current;
+                }, // 根据给定的文章/创建一个新的文章
+
+                save: () => {
+                    const separator = "<p>---</p>";
+                    var content = app.data.editor.quill.container.firstChild.innerHTML;
+                    var excerpt = content.split(separator)[0];
+                    app.data.editor.current.content = content;
+                    app.data.editor.current.excerpt = excerpt;
+                    app.data.editor.editing.content = false;
+                    var postid = app.data.editor.current.id;
+                    return postid;
+                }, // 保存文章
+
+                remove: () => {
+                    var postid = app.data.editor.current.id;
+                    app.data.editor.editing.content = false;
+                    app.data.editor.editing.title = false;
+                    app.data.editor.editing.image = false;
+                    app.data.editor.editing.tags = false;
+                    app.data.editor.working = false;
+                    app.data.editor.current = {};
+                    app.data.temp = {};
+                    return postid;
+                }, // 移除现有的文章
+
+                _save_tags: (tagstr) => {
+                    app.data.editor.editing.tags = false;
+                    app.data.editor.current.tags = splstrp(tagstr);
+                }, // 保存新的标签
+            }
+        };
+        app.methods = {
+            select: (postid) => {
+                if (!app.data.editor.saved()) {
+                    alert("You have unsaved change, please save first!")
+                    return;
+                }
+
+                axios.get("/posts/" + postid, {})
+                    .then(function (response) {
+                        post = response.data;
+                        app.data.editor.init(post);
+                    })
+                    .catch(function (error) {
+                        alert("Failed to load post.")
+                    });
+            },
+
+            save: () => {
+                app.data.editor.save();
+                var postid = app.data.editor.current.id;
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                app.data.editor.current.content = escape(app.data.editor.current.content);
+
+                axios.post(
+                    "/posts/" + postid, {
+                    post: app.data.editor.current
+                }, {
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    }
+                }).then(function (response) {
+                    if (!(postid in app.data.posts))
+                        Vue.set(app.data.posts, postid, {});
+
+                    Vue.set(app.data.posts[postid], 'tags', app.data.editor.current.tags);
+                    Vue.set(app.data.posts[postid], 'excerpt', app.data.editor.current.excerpt);
+                    Vue.set(app.data.posts[postid], 'title', app.data.editor.current.title);
+                    Vue.set(app.data.posts[postid], 'image', app.data.editor.current.image);
+                    app.data.editor.current.content = unescape(app.data.editor.current.content);
+                }).catch(function (error) {
+                    app.data.editor.current.content = unescape(app.data.editor.current.content);
+                    alert("Save post failed.");
+                });
+            },
+
+            remove: () => {
+                if (confirm("Are you surely want to delete this post?")) {
+                    var postid = app.data.editor.current.id;
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    axios.delete(
+                        "/posts/" + postid, {}, {
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        }
+                    }).then(function (response) {
+                        if (postid in app.data.posts)
+                            Vue.delete(app.data.posts, postid);
+                        app.data.editor.remove();
+                    }).catch(function (error) {
+                        alert("Delete post failed.");
+                    });
+                }
+            },
+
+            create: () => {
+                post = app.data.editor.init();
+            }
+        };
+        app.init = () => {
+            const toolbar = [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                [{ 'size': ['small', false, 'large', 'huge'] }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'image', 'clean']
+            ];
+            const editor = new Quill("#editor", {
+                modules: { toolbar: toolbar },
+                theme: 'snow'
+            });
+            app.data.editor.quill = editor;
+        };
+
+        app.vue = new Vue({
+            el: "#application",
+            data: app.data,
+            methods: app.methods,
+            delimiters: ['[[', ']]']
+        });
+        app.init();
+    }
+
+    init(app);
+</script>
+
+</html>
+{% endautoescape %}

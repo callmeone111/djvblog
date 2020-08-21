@@ -1,0 +1,125 @@
+{% autoescape off %}
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>{{ title }}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    </head>
+    <body class="has-background-light" style="min-height: 100vh;">
+        <div class="application" id="application">
+            <!--Navbar Start-->
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="container">
+                    <div class="navbar-brand">
+                        <a class="navbar-item" href="/">
+                            <span>[[ title ]]</span>
+                        </a>
+                        <a role="button" class="navbar-burger burger" v-bind:class="{'is-active': showmenu}" aria-label="menu" aria-expanded="false" data-target="menu" v-on:click="showmenu=!showmenu">
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                        </a>
+                    </div>
+    
+                    <div id="menu" class="navbar-menu" v-bind:class="{'is-active': showmenu}">
+                        <div class="navbar-end">
+                            <a class="navbar-item" v-for="(link, menuitem) in menus" v-bind:href="link">[[ menuitem ]]</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!--Navbar End-->
+
+            <!--Subtitle section Start-->
+            <section class="hero is-danger is-medium is-bold">
+                <div class="hero-body" style="height: 400px;">
+                    <div class="container has-text-centered">
+                        <h1 class="title">
+                            [[ subtitle ]]
+                        </h1>
+                    </div>
+                </div>
+            </section>
+            <!--Subtitle section End-->
+
+            <!--Posts section Start-->
+            <div class="container">
+                <section style="margin-top: -200px;">
+                    <div class="column is-8 is-offset-2">
+                        <!--For post-->
+                        <div class="card mt-6" v-for="(post, postid) in posts">
+                            <div class="card-image" v-if="post.image!==null">
+                                <figure class="image">
+                                    <img v-bind:src="post.image">
+                                </figure>
+                            </div>
+    
+                            <div class="card-content">
+                                <div class="media">
+                                    <div class="media-content has-text-centered" style="overflow: hidden;">
+                                        <a class="title has-text-weight-light" v-bind:href="'/' + postid">[[ post.title ]]</a>
+                                        <div class="tags level-item mt-3">
+                                            <span class="tag">[[ post.updated ]]</span>
+                                            <span class="tag is-info" v-for="tag in post.tags">[[ tag ]]</span>
+                                        </div>
+                                    </div>
+                                </div>
+    
+                                <div class="content" v-html="unescape(post.excerpt)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!--Posts section End-->
+
+            <!--Footer Start-->
+            <footer class="footer has-background-light py-6">
+                <div class="content has-text-centered">
+                    <p>
+                        <strong>Django-Vue Blog</strong> Powered by 
+                        <a href="https://python.org">Python</a>,
+                        <a href="https://www.djangoproject.com/">Django</a>,
+                        <a href="https://vuejs.org">Vue</a>,
+                        <a href="https://bulma.io">Bulma</a>
+                    </p>
+                </div>
+            </footer>
+            <!--Footer End-->
+        </div>
+    </body>
+
+    <script>
+
+        app = {};
+        init = (app) => {
+            app.data = {
+                showmenu: false,
+                title: "{{ title }}",
+                subtitle: "{{ subtitle }}",
+                menus: JSON.parse('{{ menus }}'),
+                posts: JSON.parse('{{ posts }}'),
+            };
+            app.methods = {
+                unescape: unescape
+            };
+            app.init = () => {};
+
+            app.vue = new Vue({
+                el: "#application",
+                data: app.data,
+                methods: app.methods,
+                delimiters: ['[[', ']]']
+            });
+            app.init();
+        }
+
+        init(app);
+    </script>
+
+</html>
+{% endautoescape %}

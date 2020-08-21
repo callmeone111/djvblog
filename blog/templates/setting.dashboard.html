@@ -1,0 +1,187 @@
+{% autoescape off %}
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Dashboard - Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        .menubar {
+            background-color: #F9F9F9;
+            border-right: 1px solid #DEDEDE;
+        }
+    </style>
+</head>
+
+<body class="is-clipped">
+    <div id="application">
+        <nav class="navbar is-hidden-desktop has-background-light" role="navigation" aria-label="main navigation">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <span>[[ title ]]</span>
+                    </a>
+                    <a role="button" class="navbar-burger burger" v-bind:class="{'is-active': showmenu}"
+                        aria-label="menu" aria-expanded="false" data-target="menu" v-on:click="showmenu=!showmenu">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+
+                <div id="menu" class="navbar-menu" v-bind:class="{'is-active': showmenu}">
+                    <div class="navbar-end">
+                        <a class="navbar-item" v-for="(link, menuitem) in menus" v-bind:href="link">[[ menuitem ]]</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="columns mx-0">
+            <div class="column is-2 hero is-fullheight is-hidden-mobile menubar">
+                <div style="padding: 40px 20px;">
+                    <a class="button is-block is-danger is-blod" v-on:click="save">
+                        Save Settings
+                    </a>
+                    <div class="hero-body container px-1">
+                        <aside class="menu">
+                            <p class="menu-label">
+                                Dashboard
+                            </p>
+                            <ul class="menu-list">
+                                <li v-for="(link, menuitem) in menus">
+                                    <a v-bind:href="link">[[ menuitem ]]</a>
+                                </li>
+                            </ul>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-6 is-offset-2 hero is-fullheight"
+                style="padding-top: 50px; justify-content: inherit;">
+
+                <article class="message is-danger is-hidden-desktop">
+                    <div class="message-body">
+                        <p>Management and editing functions are not available on the mobile device.</p>
+                        <p>Please use the desktop for management.</p>
+                    </div>
+                </article>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Titile: </label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input class="input" type="text" placeholder="Title" v-model="title">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Subtitle: </label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input class="input" type="text" placeholder="SubTitle" v-model="subtitle">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container" style="min-width: 79%;">
+                    <div class="media">
+                        <div class="media-left has-text-weight-bold" style="margin-right: 1.7rem;">
+                            Menu:
+                        </div>
+                        <div class="media-content" v-if="Object.getOwnPropertyNames(usermenus).length === 1">
+                            <button class="button is-info" style="margin: 0px 10px;" v-on:click="newumitem">
+                                <i class="fa fa-plus" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="media-content" v-if="Object.getOwnPropertyNames(usermenus).length !== 1">
+                            <div class="content" v-for="(link, name) in usermenus">
+                                <div class="field has-addons">
+                                    <div class="control">
+                                        <input class="input" type="text" placeholder="Name" v-model="name" disabled>
+                                    </div>
+                                    <div class="control">
+                                        <input class="input" type="text" placeholder="Link" v-model="usermenus[name]">
+                                    </div>
+                                    <button class="button is-info" style="margin: 0px 10px;" v-on:click="newumitem">
+                                        <i class="fa fa-plus" aria-hidden="true"></i>
+                                    </button>
+                                    <button class="button is-danger" v-on:click="Vue.delete(usermenus, name)">
+                                        <i class="fa fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% csrf_token %}
+</body>
+
+<script>
+    app = {};
+    init = (app) => {
+        app.data = {
+            showmenu: false,
+            title: "{{ title }}",
+            subtitle: "{{ subtitle }}",
+            usermenus: JSON.parse('{{ menus }}'),
+            menus: {
+                "Posts": "/dashboard/posts",
+                // "Image": "/dashboard/images",
+                "Settings": "/dashboard/settings"
+            }
+        };
+        app.methods = {
+            save: () => {
+                var data = {
+                    title: app.data.title,
+                    subtitle: app.data.subtitle,
+                    menus: app.data.usermenus
+                };
+
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                axios.post(
+                    "/settings", data, 
+                    { headers: { 'X-CSRFToken': csrftoken }
+                }).then(function (response) {})
+                .catch(function (error) {
+                    alert("Save settings error!");
+                });
+            },
+            
+            newumitem: () => {
+                var name = prompt("New menuitem name:");
+                Vue.set(app.data.usermenus, name, '');
+            }
+        };
+        app.init = () => { };
+        app.vue = new Vue({
+            el: "#application",
+            data: app.data,
+            methods: app.methods,
+            delimiters: ['[[', ']]']
+        });
+        app.init();
+    }
+    init(app);
+</script>
+
+</html>
+{% endautoescape %}
