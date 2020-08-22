@@ -17,7 +17,7 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()  # Post content WYSIWYG
     updated = models.DateTimeField(auto_now=True)  # Last updated time
-    excerpt = models.CharField(max_length=400, blank=True)
+    excerpt = models.TextField(blank=True)
     tags = models.CharField(max_length=256, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.CharField(max_length=1024, blank=True)
@@ -26,7 +26,7 @@ def get_all_posts() -> Dict[int, Dict]:
     """Return all posts without content"""
     fields = {
         "title": lambda obj: obj,
-        "excerpt": lambda obj: obj[0:200],
+        "excerpt": lambda obj: obj,
         "tags": lambda obj: obj.split(','),
         "image": lambda obj: obj,
         "updated": lambda obj: obj.strftime("%Y-%m-%d")

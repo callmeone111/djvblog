@@ -92,13 +92,13 @@
                     <div class="card-content">
                         <div style="padding: 10px 0;">
                             <strong>[[ post.title ]]</strong>
-                            <a class="is-size-7 has-text-grey-light is-pulled-right" v-bind:href="'/post/' + postid"
+                            <a class="is-size-7 has-text-grey-light is-pulled-right" v-bind:href="'/' + postid"
                                 target="_blank">
                                 <i class="fa fa-link" aria-hidden="true"></i> Preview
                             </a>
                         </div>
                         <div>
-                            <p v-html="post.excerpt"></p>
+                            <p v-html="unescape(post.excerpt)"></p>
                         </div>
                     </div>
                 </div>
@@ -313,6 +313,7 @@
                 app.data.editor.save();
                 var postid = app.data.editor.current.id;
                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                app.data.editor.current.excerpt = escape(app.data.editor.current.excerpt);
                 app.data.editor.current.content = escape(app.data.editor.current.content);
 
                 axios.post(
@@ -331,8 +332,10 @@
                     Vue.set(app.data.posts[postid], 'title', app.data.editor.current.title);
                     Vue.set(app.data.posts[postid], 'image', app.data.editor.current.image);
                     app.data.editor.current.content = unescape(app.data.editor.current.content);
+                    app.data.editor.current.excerpt = unescape(app.data.editor.current.excerpt);
                 }).catch(function (error) {
                     app.data.editor.current.content = unescape(app.data.editor.current.content);
+                    app.data.editor.current.excerpt = unescape(app.data.editor.current.excerpt);
                     alert("Save post failed.");
                 });
             },
@@ -358,7 +361,9 @@
 
             create: () => {
                 post = app.data.editor.init();
-            }
+            },
+
+            unescape: unescape
         };
         app.init = () => {
             const toolbar = [
